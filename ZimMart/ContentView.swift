@@ -113,7 +113,7 @@ struct ProductDetailView: View {
             HStack {
                 Button { quantity = max(1, quantity - 1) } label: { Image(systemName: "minus.circle.fill").font(.title2) }
                 Text("\(quantity)").font(.headline).frame(minWidth: 36)
-                Button { quantity += 1 } label: { Image(systemName: "plus.circle.fill").font(.title2) }
+                Button { if product.stock > quantity { quantity += 1 }} label: { Image(systemName: "plus.circle.fill").font(.title2) }
                 Spacer()
                 Text("Stock limit \(product.stock)").font(.caption).foregroundStyle(.secondary)
             }
