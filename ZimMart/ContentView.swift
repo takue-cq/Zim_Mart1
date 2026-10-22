@@ -222,7 +222,8 @@ struct CheckoutView: View {
 
     private func submit() {
         let customer = Customer(fullName: name, phone: phone, address: delivery == .delivery ? address : "", city: city)
-        if store.placeOrder(customer: customer, delivery: delivery, payment: .ecoCash) {
+        // Pass the selected 'payment' state variable here instead of hardcoding .ecoCash
+        if store.placeOrder(customer: customer, delivery: delivery, payment: payment) {
             showConfirmation = true
         } else {
             alertMessage = store.lastError
