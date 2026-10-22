@@ -3,10 +3,12 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var store = ShopStore()
+    @AppStorage("isDarkMode") private var isDarkMode = false
 
     var body: some View {
         MainTabView()
             .environment(store)
+            .environment(\.colorScheme, isDarkMode ? .dark : .light)
             .tint(Color(red: 0.12, green: 0.42, blue: 0.30))
     }
 }
@@ -16,15 +18,27 @@ struct MainTabView: View {
 
     var body: some View {
         TabView {
-            NavigationStack { ProductListView() }
-                .tabItem { Label("Shop", systemImage: "storefront") }
+            NavigationStack {
+                ProductListView()
+            }
+            .tabItem {
+                Label("Shop", systemImage: "storefront")
+            }
 
-            NavigationStack { CartView() }
-                .tabItem { Label("Cart", systemImage: "cart") }
-                .badge(store.cartBadgeCount == 0 ? 0 : store.cartBadgeCount)
+            NavigationStack {
+                CartView()
+            }
+            .tabItem {
+                Label("Cart", systemImage: "cart")
+            }
+            .badge(store.cartBadgeCount == 0 ? 0 : store.cartBadgeCount)
 
-            NavigationStack { OrderHistoryView() }
-                .tabItem { Label("Orders", systemImage: "shippingbox") }
+            NavigationStack {
+                OrderHistoryView()
+            }
+            .tabItem {
+                Label("Orders", systemImage: "shippingbox")
+            }
         }
     }
 }
@@ -32,7 +46,12 @@ struct MainTabView: View {
 struct ProductListView: View {
     @State private var searchText = ""
     @State private var selectedCategory: ProductCategory?
-    private let columns = [GridItem(.flexible()), GridItem(.flexible())]
+    @AppStorage("isDarkMode") private var isDarkMode = false
+
+    private let columns = [
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
 
     private var matchingProducts: [Product] {
         CatalogFilter.products(
@@ -55,9 +74,26 @@ struct ProductListView: View {
 
                     Spacer()
 
-                    Image(systemName: "sun.max.fill")
+                    // Working light/dark mode toggle
+                    Button {
+                        isDarkMode.toggle()
+                    } label: {
+                        Image(
+                            systemName: isDarkMode
+                                ? "moon.fill"
+                                : "sun.max.fill"
+                        )
                         .font(.title)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(
+                            isDarkMode ? .yellow : .orange
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(
+                        isDarkMode
+                            ? "Switch to light mode"
+                            : "Switch to dark mode"
+                    )
                 }
 
                 TextField("Search products", text: $searchText)
@@ -69,7 +105,10 @@ struct ProductListView: View {
                         categoryChip(nil, title: "All")
 
                         ForEach(ProductCategory.allCases) { category in
-                            categoryChip(category, title: category.rawValue)
+                            categoryChip(
+                                category,
+                                title: category.rawValue
+                            )
                         }
                     }
                 }
@@ -87,7 +126,9 @@ struct ProductListView: View {
                     ContentUnavailableView(
                         "No products found",
                         systemImage: "magnifyingglass",
-                        description: Text("Try another search or category.")
+                        description: Text(
+                            "Try another search or category."
+                        )
                     )
                 }
             }
@@ -134,7 +175,10 @@ struct ProductCard: View {
                 Image(systemName: product.symbol)
                     .font(.system(size: 42))
                     .foregroundStyle(.green)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(
+                        maxWidth: .infinity,
+                        maxHeight: .infinity
+                    )
 
                 if product.stock == 0 {
                     Text("Sold out")
@@ -214,7 +258,9 @@ struct ProductDetailView: View {
                         ? "\(product.stock) in stock"
                         : "Out of stock"
                 )
-                .foregroundStyle(product.stock > 0 ? .green : .red)
+                .foregroundStyle(
+                    product.stock > 0 ? .green : .red
+                )
             }
 
             HStack {
@@ -251,7 +297,9 @@ struct ProductDetailView: View {
             } label: {
                 Label(
                     added ? "Added to cart" : "Add to cart",
-                    systemImage: added ? "checkmark" : "cart.badge.plus"
+                    systemImage: added
+                        ? "checkmark"
+                        : "cart.badge.plus"
                 )
                 .frame(maxWidth: .infinity)
                 .padding()
@@ -293,7 +341,6 @@ struct CartView: View {
                                 Text(line.product.name)
                                     .font(.headline)
 
-                                // FIX: Multiply by the actual quantity.
                                 Text(
                                     money(
                                         line.product.price
@@ -306,7 +353,9 @@ struct CartView: View {
                                     Button {
                                         store.decrease(line)
                                     } label: {
-                                        Image(systemName: "minus.circle")
+                                        Image(
+                                            systemName: "minus.circle"
+                                        )
                                     }
 
                                     Text("\(line.quantity)")
@@ -315,7 +364,9 @@ struct CartView: View {
                                     Button {
                                         store.increase(line)
                                     } label: {
-                                        Image(systemName: "plus.circle")
+                                        Image(
+                                            systemName: "plus.circle"
+                                        )
                                     }
                                 }
                                 .buttonStyle(.plain)
@@ -372,7 +423,9 @@ struct CheckoutView: View {
 
     private var formIsValid: Bool {
         let basicDetails = !name.isEmpty && !phone.isEmpty
-        return basicDetails && (delivery == .collection || !address.isEmpty)
+
+        return basicDetails &&
+            (delivery == .collection || !address.isEmpty)
     }
 
     var body: some View {
@@ -431,14 +484,20 @@ struct CheckoutView: View {
                 HStack {
                     Text("\(delivery.rawValue) fee")
                     Spacer()
-                    Text(money(delivery == .delivery ? 4 : 0))
+                    Text(
+                        money(delivery == .delivery ? 4 : 0)
+                    )
                 }
 
                 HStack {
                     Text("Total").bold()
                     Spacer()
-                    Text(money(store.itemSubtotal + store.deliveryFee))
-                        .bold()
+                    Text(
+                        money(
+                            store.itemSubtotal + store.deliveryFee
+                        )
+                    )
+                    .bold()
                 }
             }
 
@@ -455,7 +514,11 @@ struct CheckoutView: View {
             "Order update",
             isPresented: Binding(
                 get: { alertMessage != nil },
-                set: { if !$0 { alertMessage = nil } }
+                set: {
+                    if !$0 {
+                        alertMessage = nil
+                    }
+                }
             )
         ) {
             Button("OK", role: .cancel) {
@@ -507,15 +570,18 @@ struct OrderConfirmationView: View {
             Text("Order placed!")
                 .font(.largeTitle.bold())
 
-            Text("Thanks, \(order.customer.fullName). Your order is pending.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+            Text(
+                "Thanks, \(order.customer.fullName). Your order is pending."
+            )
+            .multilineTextAlignment(.center)
+            .foregroundStyle(.secondary)
 
             VStack(spacing: 10) {
                 HStack {
                     Text("Order number")
                     Spacer()
-                    Text(order.id).fontWeight(.semibold)
+                    Text(order.id)
+                        .fontWeight(.semibold)
                 }
 
                 HStack {
@@ -610,7 +676,10 @@ struct OrderDetailView: View {
     var body: some View {
         List {
             Section("Order \(order.id)") {
-                LabeledContent("Status", value: order.status.rawValue)
+                LabeledContent(
+                    "Status",
+                    value: order.status.rawValue
+                )
 
                 LabeledContent(
                     "Date",
