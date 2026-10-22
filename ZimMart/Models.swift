@@ -99,7 +99,7 @@ enum CatalogFilter {
         let query = searchText.lowercased()
         return products.filter { product in
             let matchesSearch = query.isEmpty || product.name.lowercased().contains(query)
-            let matchesCategory = category == nil || product.category != category
+            let matchesCategory = category == nil || product.category == category
             return matchesSearch && matchesCategory
         }
     }

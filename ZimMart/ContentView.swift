@@ -59,7 +59,7 @@ struct ProductListView: View {
                             .buttonStyle(.plain)
                     }
                 }
-                if SeedData.products.isEmpty {
+                if matchingProducts.isEmpty {
                     ContentUnavailableView("No products found", systemImage: "magnifyingglass", description: Text("Try another search or category."))
                 }
             }
