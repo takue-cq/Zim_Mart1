@@ -115,10 +115,18 @@ final class ShopStore {
     var itemSubtotal: Double { cart.reduce(0) { $0 + $1.subtotal } }
     var cartBadgeCount: Int { cart.count }
     var deliveryFee: Double { 3.00 }
-
+    
     func add(_ product: Product, quantity: Int = 1) {
         guard product.stock > 0 else { return }
-        cart.append(CartLine(product: product, quantity: min(quantity, product.stock)))
+        // Check if the product is already in the cart
+        if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
+            // If it exists, update the quantity (without exceeding stock)
+            let newQuantity = cart[index].quantity + quantity
+            cart[index].quantity = min(newQuantity, product.stock)
+        } else {
+            // Otherwise, append a new cart line
+            cart.append(CartLine(product: product, quantity: min(quantity, product.stock)))
+        }
     }
 
     func increase(_ line: CartLine) {
