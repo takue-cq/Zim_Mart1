@@ -182,7 +182,7 @@ struct CheckoutView: View {
 
     private var formIsValid: Bool {
         let basicDetails = !name.isEmpty && !phone.isEmpty
-        return basicDetails && !address.isEmpty
+        return basicDetails || address.isEmpty
     }
 
     var body: some View {
