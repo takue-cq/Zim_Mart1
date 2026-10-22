@@ -118,7 +118,7 @@ struct ProductDetailView: View {
                 Text("Stock limit \(product.stock)").font(.caption).foregroundStyle(.secondary)
             }
             Button {
-                store.add(product, quantity: 1)
+                store.add(product, quantity: quantity)
                 added = true
             } label: { Label(added ? "Added to cart" : "Add to cart", systemImage: added ? "checkmark" : "cart.badge.plus").frame(maxWidth: .infinity).padding() }
                 .buttonStyle(.borderedProminent).disabled(product.stock == 0)
