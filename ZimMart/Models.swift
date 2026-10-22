@@ -131,7 +131,12 @@ final class ShopStore {
 
     func increase(_ line: CartLine) {
         guard let index = cart.firstIndex(where: { $0.product.id == line.product.id }) else { return }
-        cart[index].quantity += 1
+        
+        // Ensure the new quantity does not exceed the available stock
+        let currentLine = cart[index]
+        if currentLine.quantity < currentLine.product.stock {
+            cart[index].quantity += 1
+        }
     }
 
     func decrease(_ line: CartLine) {
