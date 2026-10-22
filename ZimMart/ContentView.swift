@@ -80,17 +80,53 @@ struct ProductListView: View {
 
 struct ProductCard: View {
     let product: Product
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             ZStack(alignment: .topTrailing) {
-                RoundedRectangle(cornerRadius: 16).fill(Color.green.opacity(0.10)).frame(height: 112)
-                Image(systemName: product.symbol).font(.system(size: 42)).foregroundStyle(.green).frame(maxWidth: .infinity, maxHeight: .infinity)
-                if product.stock == 0 { Text("Sold out").font(.caption.bold()).padding(6).background(.white, in: Capsule()).padding(7) }
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.green.opacity(0.10))
+                    .frame(height: 112)
+
+                Image(systemName: product.symbol)
+                    .font(.system(size: 42))
+                    .foregroundStyle(.green)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                if product.stock == 0 {
+                    Text("Sold out")
+                        .font(.caption.bold())
+                        .foregroundStyle(.black)
+                        .padding(6)
+                        .background(.white, in: Capsule())
+                        .padding(7)
+                }
             }
-            Text(product.name).font(.headline).lineLimit(2).frame(height: 42, alignment: .topLeading)
-            HStack { Text(money(product.price)).font(.subheadline.bold()); Spacer(); Label(String(format: "%.1f", product.rating), systemImage: "star.fill").font(.caption).foregroundStyle(.orange) }
+
+            Text(product.name)
+                .font(.headline)
+                .lineLimit(2)
+                .frame(height: 42, alignment: .topLeading)
+
+            HStack {
+                Text(money(product.price))
+                    .font(.subheadline.bold())
+
+                Spacer()
+
+                Label(
+                    String(format: "%.1f", product.rating),
+                    systemImage: "star.fill"
+                )
+                .font(.caption)
+                .foregroundStyle(.orange)
+            }
         }
-        .padding(10).background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18))
+        .padding(10)
+        .background(
+            Color(.secondarySystemBackground),
+            in: RoundedRectangle(cornerRadius: 18)
+        )
     }
 }
 
