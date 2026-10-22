@@ -203,7 +203,7 @@ struct CheckoutView: View {
             }
             Section("Order summary") {
                 HStack { Text("Items"); Spacer(); Text(money(store.itemSubtotal)) }
-                HStack { Text("\(delivery.rawValue) fee"); Spacer(); Text(money(delivery == .delivery ? 4 : 0)) }
+                HStack { Text("\(delivery.rawValue) fee"); Spacer(); Text(money(delivery == .delivery ? 3 : 0)) }
                 HStack { Text("Total").bold(); Spacer(); Text(money(store.itemSubtotal + store.deliveryFee)).bold() }
             }
             Section {
