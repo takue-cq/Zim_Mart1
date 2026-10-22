@@ -141,7 +141,13 @@ final class ShopStore {
 
     func decrease(_ line: CartLine) {
         guard let index = cart.firstIndex(where: { $0.product.id == line.product.id }) else { return }
-        cart[index].quantity -= 1
+        
+        if cart[index].quantity > 1 {
+            cart[index].quantity -= 1
+        } else {
+            // Removes the item completely if quantity reaches 0
+            cart.remove(at: index)
+        }
     }
 
     func remove(_ line: CartLine) {
