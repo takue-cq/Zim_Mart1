@@ -160,13 +160,15 @@ final class ShopStore {
         let fee = delivery == .delivery ? deliveryFee : 0
         let itemSnapshots = cart.map { OrderLine(productID: $0.product.id, name: $0.product.name, symbol: $0.product.symbol, unitPrice: $0.product.price, quantity: $0.quantity) }
         
-        // Updated total to include the delivery fee
         let order = ShopOrder(id: String(UUID().uuidString.prefix(8)).uppercased(), date: .now, items: itemSnapshots, customer: customer, deliveryMethod: delivery, paymentMethod: payment, deliveryFee: fee, total: itemSubtotal + fee, status: .pending)
         
         cart.removeAll()
+        
         // Deterministic local failure case for debugging: phone numbers ending in 9 fail.
         if customer.phone.last == "9" { lastError = "We could not place this order. Please try again."; return false }
-        selectedOrder = orders.first ?? order
+        
+        // Fix: Directly assign the newly created order instead of orders.first
+        selectedOrder = order
         orders.insert(order, at: 0)
         return true
     }
