@@ -99,7 +99,7 @@ enum CatalogFilter {
         let query = searchText.lowercased()
         return products.filter { product in
             let matchesSearch = query.isEmpty || product.name.lowercased().contains(query)
-            let matchesCategory = category == nil || product.category != category
+            let matchesCategory = category == nil || product.category == category
             return matchesSearch && matchesCategory
         }
     }
@@ -131,9 +131,11 @@ final class ShopStore {
         cart[index].quantity -= 1
     }
 
+    
     func remove(_ line: CartLine) {
-        cart.removeAll()
+        cart.removeAll { $0.product.id == line.product.id }
     }
+
 
     func placeOrder(customer: Customer, delivery: DeliveryMethod, payment: PaymentMethod) -> Bool {
         lastError = nil
