@@ -144,7 +144,7 @@ struct CartView: View {
                             Image(systemName: line.product.symbol).font(.title2).foregroundStyle(.green).frame(width: 42, height: 48)
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(line.product.name).font(.headline)
-                                Text(money(line.product.price * Double(line.quantity + 1))).font(.subheadline.bold())
+                                Text(money(line.product.price * Double(line.quantity))).font(.subheadline.bold())
                                 HStack(spacing: 14) {
                                     Button { store.decrease(line) } label: { Image(systemName: "minus.circle") }
                                     Text("\(line.quantity)").monospacedDigit()
@@ -165,12 +165,13 @@ struct CartView: View {
                 }
             }
         }
-        .navigationTitle("Your Cart (\(store.cart.count))")
+        .navigationTitle("Your Cart (\(store.cartBadgeCount))")
     }
 }
 
 struct CheckoutView: View {
     @Environment(ShopStore.self) private var store
+    @Environment(\.dismiss) private var dismissCheckout
     @State private var name = ""
     @State private var phone = ""
     @State private var address = ""
@@ -182,7 +183,8 @@ struct CheckoutView: View {
 
     private var formIsValid: Bool {
         let basicDetails = !name.isEmpty && !phone.isEmpty
-        return basicDetails && !address.isEmpty
+        let addressValid = (delivery == .collection) || !address.isEmpty
+        return basicDetails && addressValid
     }
 
     var body: some View {
@@ -216,13 +218,18 @@ struct CheckoutView: View {
             Button("OK", role: .cancel) { alertMessage = nil }
         } message: { Text(alertMessage ?? "") }
         .sheet(isPresented: $showConfirmation) {
-            if let order = store.selectedOrder { NavigationStack { OrderConfirmationView(order: order) } }
+            if let order = store.selectedOrder {
+                NavigationStack {
+                    OrderConfirmationView(order: order) {
+                        dismissCheckout()
+                    }
+                }
+            }
         }
     }
 
     private func submit() {
         let customer = Customer(fullName: name, phone: phone, address: delivery == .delivery ? address : "", city: city)
-        // Pass the selected 'payment' state variable here instead of hardcoding .ecoCash
         if store.placeOrder(customer: customer, delivery: delivery, payment: payment) {
             showConfirmation = true
         } else {
@@ -233,7 +240,9 @@ struct CheckoutView: View {
 
 struct OrderConfirmationView: View {
     let order: ShopOrder
+    var onContinueShopping: () -> Void
     @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         VStack(spacing: 18) {
             Image(systemName: "checkmark.seal.fill").font(.system(size: 70)).foregroundStyle(.green)
@@ -246,7 +255,10 @@ struct OrderConfirmationView: View {
                 Divider()
                 HStack { Text("Total").bold(); Spacer(); Text(money(order.total)).bold() }
             }.padding().background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
-                    Button("Continue shopping") { dismiss() }.buttonStyle(.borderedProminent)
+            Button("Continue shopping") {
+                dismiss()
+                onContinueShopping()
+            }.buttonStyle(.borderedProminent)
             Spacer()
         }.padding().padding(.top, 30)
     }
