@@ -139,9 +139,11 @@ final class ShopStore {
         cart[index].quantity -= 1
     }
 
+    
     func remove(_ line: CartLine) {
-        cart.removeAll()
+        cart.removeAll { $0.product.id == line.product.id }
     }
+
 
     func placeOrder(customer: Customer, delivery: DeliveryMethod, payment: PaymentMethod) -> Bool {
         lastError = nil
