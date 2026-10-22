@@ -59,7 +59,7 @@ struct ProductListView: View {
                             .buttonStyle(.plain)
                     }
                 }
-                if SeedData.products.isEmpty {
+                if matchingProducts.isEmpty {
                     ContentUnavailableView("No products found", systemImage: "magnifyingglass", description: Text("Try another search or category."))
                 }
             }
@@ -113,12 +113,12 @@ struct ProductDetailView: View {
             HStack {
                 Button { quantity = max(1, quantity - 1) } label: { Image(systemName: "minus.circle.fill").font(.title2) }
                 Text("\(quantity)").font(.headline).frame(minWidth: 36)
-                Button { quantity += 1 } label: { Image(systemName: "plus.circle.fill").font(.title2) }
+                Button { if product.stock > quantity { quantity += 1 }} label: { Image(systemName: "plus.circle.fill").font(.title2) }
                 Spacer()
                 Text("Stock limit \(product.stock)").font(.caption).foregroundStyle(.secondary)
             }
             Button {
-                store.add(product, quantity: 1)
+                store.add(product, quantity: quantity)
                 added = true
             } label: { Label(added ? "Added to cart" : "Add to cart", systemImage: added ? "checkmark" : "cart.badge.plus").frame(maxWidth: .infinity).padding() }
                 .buttonStyle(.borderedProminent).disabled(product.stock == 0)
