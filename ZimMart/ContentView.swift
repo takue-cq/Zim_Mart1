@@ -1,5 +1,6 @@
-
 import SwiftUI
+
+// MARK: - Root Content View
 
 struct ContentView: View {
     @State private var store = ShopStore()
@@ -12,6 +13,8 @@ struct ContentView: View {
             .tint(Color(red: 0.12, green: 0.42, blue: 0.30))
     }
 }
+
+// MARK: - Main Tabs
 
 struct MainTabView: View {
     @Environment(ShopStore.self) private var store
@@ -31,7 +34,7 @@ struct MainTabView: View {
             .tabItem {
                 Label("Cart", systemImage: "cart")
             }
-            .badge(store.cartBadgeCount == 0 ? 0 : store.cartBadgeCount)
+            .badge(store.cartBadgeCount)
 
             NavigationStack {
                 OrderHistoryView()
@@ -42,6 +45,8 @@ struct MainTabView: View {
         }
     }
 }
+
+// MARK: - Product List
 
 struct ProductListView: View {
     @State private var searchText = ""
@@ -74,7 +79,6 @@ struct ProductListView: View {
 
                     Spacer()
 
-                    // Working light/dark mode toggle
                     Button {
                         isDarkMode.toggle()
                     } label: {
@@ -162,6 +166,8 @@ struct ProductListView: View {
     }
 }
 
+// MARK: - Product Card
+
 struct ProductCard: View {
     let product: Product
 
@@ -217,6 +223,8 @@ struct ProductCard: View {
     }
 }
 
+// MARK: - Product Details
+
 struct ProductDetailView: View {
     let product: Product
 
@@ -270,19 +278,21 @@ struct ProductDetailView: View {
                     Image(systemName: "minus.circle.fill")
                         .font(.title2)
                 }
+                .disabled(quantity <= 1)
 
                 Text("\(quantity)")
                     .font(.headline)
                     .frame(minWidth: 36)
 
                 Button {
-                    if product.stock > quantity {
+                    if quantity < product.stock {
                         quantity += 1
                     }
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
                 }
+                .disabled(quantity >= product.stock)
 
                 Spacer()
 
@@ -315,6 +325,8 @@ struct ProductDetailView: View {
     }
 }
 
+// MARK: - Cart
+
 struct CartView: View {
     @Environment(ShopStore.self) private var store
 
@@ -341,22 +353,18 @@ struct CartView: View {
                                 Text(line.product.name)
                                     .font(.headline)
 
-                                Text(
-                                    money(
-                                        line.product.price
-                                            * Double(line.quantity)
-                                    )
-                                )
-                                .font(.subheadline.bold())
+                                Text(money(line.subtotal))
+                                    .font(.subheadline.bold())
 
                                 HStack(spacing: 14) {
                                     Button {
                                         store.decrease(line)
                                     } label: {
-                                        Image(
-                                            systemName: "minus.circle"
-                                        )
+                                        Image(systemName: "minus.circle")
                                     }
+                                    .accessibilityLabel(
+                                        "Decrease \(line.product.name) quantity"
+                                    )
 
                                     Text("\(line.quantity)")
                                         .monospacedDigit()
@@ -364,10 +372,11 @@ struct CartView: View {
                                     Button {
                                         store.increase(line)
                                     } label: {
-                                        Image(
-                                            systemName: "plus.circle"
-                                        )
+                                        Image(systemName: "plus.circle")
                                     }
+                                    .accessibilityLabel(
+                                        "Increase \(line.product.name) quantity"
+                                    )
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -379,11 +388,21 @@ struct CartView: View {
                             } label: {
                                 Image(systemName: "trash")
                             }
+                            .accessibilityLabel(
+                                "Remove \(line.product.name)"
+                            )
                         }
                         .padding(.vertical, 7)
                     }
 
                     Section {
+                        HStack {
+                            Text("Total items")
+                            Spacer()
+                            Text("\(store.cartBadgeCount)")
+                                .bold()
+                        }
+
                         HStack {
                             Text("Subtotal")
                             Spacer()
@@ -405,9 +424,12 @@ struct CartView: View {
                 }
             }
         }
-        .navigationTitle("Your Cart (\(store.cart.count))")
+        // Count product units rather than distinct product lines.
+        .navigationTitle("Your Cart (\(store.cartBadgeCount))")
     }
 }
+
+// MARK: - Checkout
 
 struct CheckoutView: View {
     @Environment(ShopStore.self) private var store
@@ -422,18 +444,25 @@ struct CheckoutView: View {
     @State private var alertMessage: String?
 
     private var formIsValid: Bool {
-        let basicDetails = !name.isEmpty && !phone.isEmpty
+        let basicDetails =
+            !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            !phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
         return basicDetails &&
-            (delivery == .collection || !address.isEmpty)
+            (delivery == .collection ||
+             !address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
+
+    private var checkoutDeliveryFee: Double {
+        delivery == .delivery ? store.deliveryFee : 0
     }
 
     var body: some View {
         Form {
             Section("Delivery method") {
                 Picker("Method", selection: $delivery) {
-                    ForEach(DeliveryMethod.allCases) {
-                        Text($0.rawValue).tag($0)
+                    ForEach(DeliveryMethod.allCases) { method in
+                        Text(method.rawValue).tag(method)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -459,8 +488,8 @@ struct CheckoutView: View {
                                 "Victoria Falls"
                             ],
                             id: \.self
-                        ) {
-                            Text($0)
+                        ) { cityName in
+                            Text(cityName)
                         }
                     }
                 }
@@ -468,34 +497,30 @@ struct CheckoutView: View {
 
             Section("Payment") {
                 Picker("Payment method", selection: $payment) {
-                    ForEach(PaymentMethod.allCases) {
-                        Text($0.rawValue).tag($0)
+                    ForEach(PaymentMethod.allCases) { method in
+                        Text(method.rawValue).tag(method)
                     }
                 }
             }
 
             Section("Order summary") {
                 HStack {
-                    Text("Items")
+                    Text("Items (\(store.cartBadgeCount))")
                     Spacer()
                     Text(money(store.itemSubtotal))
                 }
 
                 HStack {
-                    Text("\(delivery.rawValue) fee")
+                    Text("Delivery")
                     Spacer()
-                    Text(
-                        money(delivery == .delivery ? 4 : 0)
-                    )
+                    Text(money(checkoutDeliveryFee))
                 }
 
                 HStack {
                     Text("Total").bold()
                     Spacer()
                     Text(
-                        money(
-                            store.itemSubtotal + store.deliveryFee
-                        )
+                        money(store.itemSubtotal + checkoutDeliveryFee)
                     )
                     .bold()
                 }
@@ -514,8 +539,8 @@ struct CheckoutView: View {
             "Order update",
             isPresented: Binding(
                 get: { alertMessage != nil },
-                set: {
-                    if !$0 {
+                set: { isPresented in
+                    if !isPresented {
                         alertMessage = nil
                     }
                 }
@@ -538,9 +563,11 @@ struct CheckoutView: View {
 
     private func submit() {
         let customer = Customer(
-            fullName: name,
-            phone: phone,
-            address: delivery == .delivery ? address : "",
+            fullName: name.trimmingCharacters(in: .whitespacesAndNewlines),
+            phone: phone.trimmingCharacters(in: .whitespacesAndNewlines),
+            address: delivery == .delivery
+                ? address.trimmingCharacters(in: .whitespacesAndNewlines)
+                : "",
             city: city
         )
 
@@ -555,6 +582,8 @@ struct CheckoutView: View {
         }
     }
 }
+
+// MARK: - Order Confirmation
 
 struct OrderConfirmationView: View {
     let order: ShopOrder
@@ -622,6 +651,8 @@ struct OrderConfirmationView: View {
     }
 }
 
+// MARK: - Order History
+
 struct OrderHistoryView: View {
     @Environment(ShopStore.self) private var store
 
@@ -664,11 +695,13 @@ struct OrderHistoryView: View {
             }
         }
         .navigationTitle("Orders")
-        .navigationDestination(for: ShopOrder.self) {
-            OrderDetailView(order: $0)
+        .navigationDestination(for: ShopOrder.self) { order in
+            OrderDetailView(order: order)
         }
     }
 }
+
+// MARK: - Order Details
 
 struct OrderDetailView: View {
     let order: ShopOrder
@@ -676,10 +709,7 @@ struct OrderDetailView: View {
     var body: some View {
         List {
             Section("Order \(order.id)") {
-                LabeledContent(
-                    "Status",
-                    value: order.status.rawValue
-                )
+                LabeledContent("Status", value: order.status.rawValue)
 
                 LabeledContent(
                     "Date",
@@ -752,6 +782,8 @@ struct OrderDetailView: View {
         .navigationTitle("Order details")
     }
 }
+
+// MARK: - Preview
 
 #Preview {
     ContentView()
